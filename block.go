@@ -1,13 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/binary"
+	//"crypto/sha256"
 	"time"
+	"encoding/binary"
+	"bytes"
 )
 
 const genesisInfo = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
+
+const bits = 16
 
 //1. 简单版（区块字段少）
 //
@@ -46,40 +48,46 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 		Hash:          nil,
 		MerkelRoot:    nil,
 		TimeStamp:     uint64(time.Now().Unix()),
-		Bits:          0, //随便写一个数
-		Nonce:         0, //随便写一个数
+		Bits:          bits, //随便写一个数
+		Nonce:         0,    //随便写一个数
 
 		Data: []byte(data),
 	}
 
 	//设置哈希值
-	block.setHash()
+	//block.setHash()
+
+	pow := NewProofOfWork(block)
+	nonce, hash := pow.Run()
+
+	block.Hash = hash
+	block.Nonce = nonce
 
 	return &block
 }
 
 //3. 生成哈希
 // - 将所有的数据拼接起来，做sha256处理
-func (b *Block) setHash() {
-	var blockInfo []byte
-
-	blockInfo = append(blockInfo, uint2Bytes(b.Version)...)
-	blockInfo = append(blockInfo, b.PrevBlockHash...)
-	blockInfo = append(blockInfo, b.Hash...)
-
-	blockInfo = append(blockInfo, b.MerkelRoot...)
-	blockInfo = append(blockInfo, uint2Bytes(b.TimeStamp)...)
-	blockInfo = append(blockInfo, uint2Bytes(b.Bits)...)
-	blockInfo = append(blockInfo, uint2Bytes(b.Nonce)...)
-
-	blockInfo = append(blockInfo, b.Data...)
-
-	//把新的字段添加进来
-
-	hash := sha256.Sum256(blockInfo)
-
-	b.Hash = hash[:]
-}
+//func (b *Block) setHash() {
+//	var blockInfo []byte
+//
+//	blockInfo = append(blockInfo, uint2Bytes(b.Version)...)
+//	blockInfo = append(blockInfo, b.PrevBlockHash...)
+//	blockInfo = append(blockInfo, b.Hash...)
+//
+//	blockInfo = append(blockInfo, b.MerkelRoot...)
+//	blockInfo = append(blockInfo, uint2Bytes(b.TimeStamp)...)
+//	blockInfo = append(blockInfo, uint2Bytes(b.Bits)...)
+//	blockInfo = append(blockInfo, uint2Bytes(b.Nonce)...)
+//
+//	blockInfo = append(blockInfo, b.Data...)
+//
+//	//把新的字段添加进来
+//
+//	hash := sha256.Sum256(blockInfo)
+//
+//	b.Hash = hash[:]
+//}
 
 //将数字转成字节流
 func uint2Bytes(num uint64) []byte {
@@ -96,4 +104,3 @@ func uint2Bytes(num uint64) []byte {
 
 	return buffer.Bytes()
 }
-
